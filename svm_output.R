@@ -1,0 +1,104 @@
+library(DataCombine)
+library(ggplot2)
+library(lubridate)
+library(scales)
+library(e1071)
+setwd('/Users/sondreandersen/Desktop/new data 2/')
+
+
+
+# Importing data
+df_est <- read.csv('equal_datasets/swe_est.csv')
+df_test <- read.csv('equal_datasets/swe_test.csv')
+df_est$TIME <- ymd(df_est$TIME)
+df_test$TIME <- ymd(df_test$TIME)
+
+# Sletter hvis dato er før 1988-01, slik at alle modeller som har lag fra 1 til 12, har 
+# ... like mange observasjoner. 
+df_est <- df_est[df_est[['TIME']] >= '1988-01-01',] 
+df_test <- df_test[df_test[['TIME']] >= '1988-01-01',] 
+
+
+n_output_est <- sum(df_est$outputgap)
+n_output_test <- sum(df_test$outputgap)
+
+
+# Lager en ny dataframe med bare variabler som skal være med i analysen
+# .. og konverterer recession variablen til faktorer
+df_estimation <- data.frame(output=as.factor(df_est$outputgap),
+                      spread = df_est$long_rate_L12 - df_est$short_rate_L12)
+df_estimation <- na.omit(df_estimation)
+
+df_testing <- data.frame(output=as.factor(df_test$outputgap),
+                      spread = df_test$long_rate_L12 - df_test$short_rate_L12)
+df_testing <- na.omit(df_testing)
+
+
+
+
+
+
+
+
+# Analysis
+# Finding optimal gamma 
+tune.out=tune(svm, output~., data=df_estimation, kernel="radial",
+              ranges=list(cost=c(1:100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+                                 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900,
+                                 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000,
+                                 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000),
+                          gamma=c(0.01, 0.025, 0.05, 0.75, 0.1, 0.25, 0.5, 0.75,1,2)))
+summary(tune.out)
+
+# Creating in-sample ROC curve
+df_roc <- data.frame(cost=NA, true_pos=NA, true_neg=NA, false_pos=NA, false_neg=NA,
+                     hit_rate=NA, false_alarm=NA, bias=NA, precision=NA, accuracy=NA)
+cost_intervals = c(1:100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+                   1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900,
+                   2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000,
+                   6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000)
+for (i in cost_intervals){
+  svmfit <- svm(output~., data=df_estimation, kernel="radial", cost=i, gamma=2.00, scale=FALSE)
+  ypred_insample = predict(svmfit, df_estimation)
+  t <- table(predict=ypred_insample, thruth=df_estimation$output)
+  tp <- round(t[2,2], digits = 1)
+  tn <- round(t[1,1], digits = 1)
+  fp <- round(t[2,1], digits = 1)
+  fn <- round(t[1,2], digits = 1)
+  cost <- i
+  
+  hit_rate <- round(tp / (tp + fn), digits=2)
+  false_alarm <- round(fp / (fp + tn), digits=2)
+  bias <- round((tp + fp) / n_output_est, digits=2)
+  precision <- round(tp / (tp + fp), digits=2)
+  accuracy <- round(   (tp + tn) / (tp + fp + tn + fn)   ,digits=2)
+  
+  df_roc[nrow(df_roc) + 1,] <- c(cost, tp, tn, fp, fn, hit_rate, false_alarm, bias, precision, accuracy)
+  
+  print(c(cost, tp, tn, fp, fn, hit_rate, false_alarm, bias, precision))
+}
+df_roc <- df_roc[-c(1),]
+# Export results
+write.csv(df_roc,"1_analysis/output_forecasting_svm/insample_12_dnk_.csv", row.names = FALSE)
+
+# ---> Out of sample test 
+svmfit <- svm(output~., data=df_estimation, kernel="radial", cost=8, gamma=2.00, scale=FALSE)
+plot(svmfit, df_estimation) # Insample plot
+
+ypred = predict(svmfit, df_testing)
+table(predict=ypred, thruth=df_testing$output)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
