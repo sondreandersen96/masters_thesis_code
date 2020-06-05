@@ -28,7 +28,7 @@ models based on a probit regression.
  
  * **Recession/output:** These keywords describe whether the models attempts to forecast recessions or output gaps. 
  
- 
- *(Note that in some of the **R** files the lag length and also (for the non MSCI files) the explanatory variable must be changed depending on the model of interest.)*
+
+*(Note that in some of the **R** files the lag length and also (for the non MSCI files) the explanatory variable must be changed depending on the model of interest.)*
  
   
