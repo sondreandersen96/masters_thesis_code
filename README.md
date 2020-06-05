@@ -23,10 +23,10 @@ models based on a probit regression.
 
 * **SVM:** The four files that start with this keyword are the R scripts that are used to create and test the SVM models. 
 
- * **MSCI:** As before, the files that contain this keyword are the files that take the stock indexes as explanatory 
+  * **MSCI:** As before, the files that contain this keyword are the files that take the stock indexes as explanatory 
  variables. The other files take either the spread or the interest rate pair (long and short) as explanatory variables. 
  
- * **Recession/output:** These keywords describe whether the models attempts to forecast recessions or output gaps. 
+  * **Recession/output:** These keywords describe whether the models attempts to forecast recessions or output gaps. 
  
 
 *(Note that in some of the **R** files the lag length and also (for the non MSCI files) the explanatory variable must be changed depending on the model of interest.)*
