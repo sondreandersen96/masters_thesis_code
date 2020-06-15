@@ -12,7 +12,7 @@ lag = 12
 df = pd.read_csv("equal_datasets/%s_est.csv" %(country))
 df['TIME'] = pd.to_datetime(df['TIME'])
 
-# Limit data
+# Limit data (really, just the lower limit is effective as the datasets only go up to 06-2019)
 start_date = '1988-01-01'
 end_date = '2020-01-01'
 df = df[(df['TIME'] >= start_date) & (df['TIME'] <= end_date )]
